@@ -39,8 +39,8 @@
     <option value="HOGAR">Hogar</option>
     <option value="MODA">Moda</option>
     <option value="HERRAMIENTAS">Herramientas</option>
-    <option value="Jugueteria">Juguetería</option>
-    <option value="Electronica">Electrónica</option>
+    <option value="JUGUETERIA">Juguetería</option>
+    <option value="ELECTRONICA">Electrónica</option>
   </select>
 
   <input name="comentario" placeholder="Comentario" />
@@ -50,8 +50,9 @@
 </form>
 
 <script>
-    
+
 const URL = "https://script.google.com/macros/s/AKfycbyYDGOT3f0PP1AONkKh8JeU1QezJu4f9s11LY5IzXJultMZ4VKvrwW0dfZRnLzPLJAO/exec"
+
 const tipo = document.getElementById("tipo")
 const sku = document.getElementById("sku")
 const btn = document.getElementById("btn")
@@ -85,24 +86,38 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     return
   }
 
-  btn.disabled = true
-  btn.innerText = "Guardando..."
+  try {
+    btn.disabled = true
+    btn.innerText = "Guardando..."
 
-  await fetch(URL, {
-    method: "POST",
-    body: JSON.stringify(data),
-    mode: "no-cors"
-  })
+    const response = await fetch(URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
+
+    const result = await response.json()
+
+    if (result.status === "ok") {
+      alert("Guardado correctamente")
+      e.target.reset()
+      sku.style.display = "none"
+      tipo.value = ""
+    } else {
+      alert("Error al guardar")
+    }
+
+  } catch (error) {
+    console.error(error)
+    alert("Error de conexión")
+  }
 
   btn.disabled = false
   btn.innerText = "Guardar"
-
-  alert("Guardado")
-
-  e.target.reset()
-  sku.style.display = "none"
-  tipo.value = ""
 })
+
 </script>
 
 </body>
