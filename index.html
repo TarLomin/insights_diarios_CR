@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Insights Diarios</title>
+  <title>Captura de demanda</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="header.png">
+  <link rel="icon" href="favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
@@ -14,6 +15,7 @@
 
 <form id="form">
 
+  <!-- Sucursal -->
   <select name="sucursal" required>
     <option value="" disabled selected>Selecciona sucursal</option>
     <option value="Huerta">Huerta</option>
@@ -21,109 +23,87 @@
     <option value="Leon">León</option>
   </select>
 
-  <select name="tipo" id="tipo" required>
+  <!-- Tipo -->
+  <select name="tipo" required>
     <option value="" disabled selected>Selecciona tipo</option>
     <option value="no_tenemos">No tenemos</option>
     <option value="no_se_vende">No se vende</option>
   </select>
 
-  <input id="sku" name="sku" placeholder="SKU" style="display:none;" />
+  <!-- SKU -->
+  <input id="sku" name="sku" placeholder="SKU" required>
 
-  <input name="producto" placeholder="Descripción del producto" required />
+  <!-- FOTO -->
+  <input type="file" id="foto" accept="image/*" capture="environment">
 
-  <select name="categoria">
-    <option value="">Categoría</option>
-    <option value="PAPELERIA">Papelería</option>
-    <option value="SALUD_Y_BELLEZA">Salud y belleza</option>
-    <option value="MASCOTAS">Mascotas</option>
-    <option value="HOGAR">Hogar</option>
-    <option value="MODA">Moda</option>
-    <option value="HERRAMIENTAS">Herramientas</option>
-    <option value="JUGUETERIA">Juguetería</option>
-    <option value="ELECTRONICA">Electrónica</option>
-  </select>
+  <!-- PREVIEW -->
+  <img id="preview" style="width:150px; display:none; margin-top:10px;">
 
-  <input name="comentario" placeholder="Comentario" />
+  <br><br>
 
-  <button type="submit" id="btn">Guardar</button>
+  <button type="submit">Enviar</button>
 
 </form>
 
 <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpfXSIeimaslKjZp3WsoEcCujIEf_P9ZIqLIb0bRmpvxC2mN0SK6RccesQpbRniUwZ/exec";
 
-const URL = "https://script.google.com/macros/s/AKfycbyBZpYFvXK7unpkkJ9jTT8U18iJVWBdDWstAT4lt3i0dYy11glFxhDlnI4AaXSVHR8H/exec"
+// preview imagen
+document.getElementById("foto").addEventListener("change", function(e){
+  const file = e.target.files[0];
+  if (file) {
+    const preview = document.getElementById("preview");
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  }
+});
 
-const tipo = document.getElementById("tipo")
-const sku = document.getElementById("sku")
-const btn = document.getElementById("btn")
+// submit
+document.getElementById("form").addEventListener("submit", async function(e){
+  e.preventDefault();
 
-// Mostrar/ocultar SKU
-tipo.addEventListener("change", () => {
-  if (tipo.value === "no_se_vende") {
-    sku.style.display = "block"
-    sku.required = true
+  const sucursal = e.target.sucursal.value;
+  const tipo = e.target.tipo.value;
+  const sku = e.target.sku.value;
+  const file = document.getElementById("foto").files[0];
+
+  let base64 = "";
+  let nombre = "";
+
+  if (file) {
+    const reader = new FileReader();
+
+    reader.onload = async function () {
+      base64 = reader.result.split(',')[1];
+      nombre = file.name;
+
+      await enviarDatos(sucursal, tipo, sku, base64, nombre);
+    };
+
+    reader.readAsDataURL(file);
   } else {
-    sku.style.display = "none"
-    sku.required = false
-    sku.value = ""
+    await enviarDatos(sucursal, tipo, sku, "", "");
   }
-})
+});
 
-// Submit
-document.getElementById("form").addEventListener("submit", async (e) => {
-  e.preventDefault()
+async function enviarDatos(sucursal, tipo, sku, imagen, nombre) {
 
-  const formData = new FormData(e.target)
-  const data = Object.fromEntries(formData.entries())
-
-  // Validaciones
-  if (!data.tipo) {
-    alert("Debes seleccionar un tipo")
-    return
-  }
-
-  if (!data.producto || data.producto.trim() === "") {
-    alert("La descripción es obligatoria")
-    return
-  }
-
-  if (data.tipo === "no_se_vende" && (!data.sku || data.sku.trim() === "")) {
-    alert("El SKU es obligatorio para productos que no se venden")
-    return
-  }
-
-  // Normalización
-  data.producto = data.producto.trim().toUpperCase()
-  data.categoria = data.categoria?.toUpperCase() || ""
-  data.sku = data.sku?.trim() || ""
-
-  try {
-    btn.disabled = true
-    btn.innerText = "Guardando..."
-
-    await fetch(URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: new URLSearchParams(data)
+  await fetch(SCRIPT_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      sucursal: sucursal,
+      tipo: tipo,
+      sku: sku,
+      imagen: imagen,
+      nombre: nombre
     })
+  });
 
-    alert("Guardado correctamente")
+  alert("Registro enviado");
 
-    e.target.reset()
-    sku.style.display = "none"
-    tipo.value = ""
-
-  } catch (error) {
-    console.error(error)
-    alert("Error de conexión")
-  }
-
-  btn.disabled = false
-  btn.innerText = "Guardar"
-})
-
+  document.getElementById("form").reset();
+  document.getElementById("preview").style.display = "none";
+}
 </script>
 
 </body>
