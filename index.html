@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Captura de demanda</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.png">
+</head>
+
+<body>
+
+<img src="header.png" alt="Header" class="header-img">
+
+<h2>Captura de demanda</h2>
+
+<form id="form">
+
+  <select name="sucursal" required>
+    <option value="">Sucursal</option>
+    <option value="Huerta">Huerta</option>
+    <option value="Americas">Americas</option>
+    <option value="Leon">León</option>
+  </select>
+
+  <select name="tipo" id="tipo" required>
+    <option value="">Tipo</option>
+    <option value="no_tenemos">No tenemos</option>
+    <option value="no_se_vende">No se vende</option>
+  </select>
+
+  <input id="sku" name="sku" placeholder="SKU" style="display:none;" />
+
+  <input name="producto" placeholder="Descripción del producto" required />
+
+  <select name="categoria">
+    <option value="">Categoría</option>
+    <option value="PAPELERIA">Papelería</option>
+    <option value="SALUD_Y_BELLEZA">Salud y belleza</option>
+    <option value="MASCOTAS">Mascotas</option>
+    <option value="HOGAR">Hogar</option>
+    <option value="MODA">Moda</option>
+    <option value="HERRAMIENTAS">Herramientas</option>
+    <option value="Jugueteria">Juguetería</option>
+    <option value="Electronica">Electrónica</option>
+  </select>
+
+  <input name="comentario" placeholder="Comentario" />
+
+  <button type="submit" id="btn">Guardar</button>
+
+</form>
+
+<script>
+const URL = "https://script.google.com/macros/s/AKfycbw8lG1sK06ZuDN8E3vdYSd6cxRwhcjMwkwLXlimInpDEgSipGLqKPk7Xp0lH-8EU5Fc/exec"
+
+const tipo = document.getElementById("tipo")
+const sku = document.getElementById("sku")
+const btn = document.getElementById("btn")
+
+// Mostrar/ocultar SKU
+tipo.addEventListener("change", () => {
+  if (tipo.value === "no_se_vende") {
+    sku.style.display = "block"
+    sku.required = true
+  } else {
+    sku.style.display = "none"
+    sku.required = false
+    sku.value = ""
+  }
+})
+
+// Submit
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault()
+
+  const formData = new FormData(e.target)
+  const data = Object.fromEntries(formData.entries())
+
+  if (!data.producto || data.producto.trim() === "") {
+    alert("La descripción es obligatoria")
+    return
+  }
+
+  if (data.tipo === "no_se_vende" && (!data.sku || data.sku.trim() === "")) {
+    alert("El SKU es obligatorio para productos que no se venden")
+    return
+  }
+
+  btn.disabled = true
+  btn.innerText = "Guardando..."
+
+  await fetch(URL, {
+    method: "POST",
+    body: JSON.stringify(data),
+    mode: "no-cors"
+  })
+
+  btn.disabled = false
+  btn.innerText = "Guardar"
+
+  alert("Guardado")
+
+  e.target.reset()
+  sku.style.display = "none"
+  tipo.value = ""
+})
+</script>
+
+</body>
+</html>
