@@ -103,10 +103,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
 
     await fetch(URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
+      body: new URLSearchParams(data)
     })
 
     alert("Guardado correctamente")
