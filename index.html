@@ -9,13 +9,13 @@
 
 <body>
 
-<img src="header.png" alt="Header" class="header-img">
+<img src="header.png" class="header-img">
 
 <h2>Captura de demanda</h2>
 
 <form id="form">
 
-  <!-- Sucursal -->
+  <!-- SUCURSAL -->
   <select name="sucursal" required>
     <option value="" disabled selected>Selecciona sucursal</option>
     <option value="Huerta">Huerta</option>
@@ -23,32 +23,73 @@
     <option value="Leon">León</option>
   </select>
 
-  <!-- Tipo -->
-  <select name="tipo" required>
+  <!-- TIPO -->
+  <select name="tipo" id="tipo" required>
     <option value="" disabled selected>Selecciona tipo</option>
     <option value="no_tenemos">No tenemos</option>
     <option value="no_se_vende">No se vende</option>
   </select>
 
+  <!-- CATEGORIA -->
+  <select name="categoria" required>
+    <option value="" disabled selected>Selecciona categoría</option>
+    <option value="Baño">Baño</option>
+    <option value="Cocina">Cocina</option>
+    <option value="Hogar">Hogar</option>
+  </select>
+
+  <!-- PRODUCTO -->
+  <input id="producto" name="producto" placeholder="Producto">
+
   <!-- SKU -->
-  <input id="sku" name="sku" placeholder="SKU" required>
+  <input id="sku" name="sku" placeholder="SKU">
+
+  <!-- COMENTARIO -->
+  <textarea name="comentario" placeholder="Comentario"></textarea>
 
   <!-- FOTO -->
   <input type="file" id="foto" accept="image/*" capture="environment">
 
-  <!-- PREVIEW -->
   <img id="preview" style="width:150px; display:none; margin-top:10px;">
 
   <br><br>
-
   <button type="submit">Enviar</button>
 
 </form>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpfXSIeimaslKjZp3WsoEcCujIEf_P9ZIqLIb0bRmpvxC2mN0SK6RccesQpbRniUwZ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzfQqdMBTx5IJjWerSTPMd3DFw8xVGkoy-ouOk47a0FjPK984wiIUWOHDzjphZBBQM/exec";
 
-// preview imagen
+const tipoSelect = document.getElementById("tipo");
+const skuInput = document.getElementById("sku");
+const productoInput = document.getElementById("producto");
+
+// ===== LÓGICA DE NEGOCIO =====
+tipoSelect.addEventListener("change", function() {
+  const tipo = this.value;
+
+  if (tipo === "no_se_vende") {
+    skuInput.required = true;
+    skuInput.style.display = "block";
+
+    productoInput.required = false;
+    productoInput.style.display = "none";
+    productoInput.value = "";
+  } else {
+    skuInput.required = false;
+    skuInput.style.display = "none";
+    skuInput.value = "";
+
+    productoInput.required = true;
+    productoInput.style.display = "block";
+  }
+});
+
+window.addEventListener("load", () => {
+  tipoSelect.dispatchEvent(new Event("change"));
+});
+
+// ===== PREVIEW =====
 document.getElementById("foto").addEventListener("change", function(e){
   const file = e.target.files[0];
   if (file) {
@@ -58,45 +99,42 @@ document.getElementById("foto").addEventListener("change", function(e){
   }
 });
 
-// submit
+// ===== SUBMIT =====
 document.getElementById("form").addEventListener("submit", async function(e){
   e.preventDefault();
 
-  const sucursal = e.target.sucursal.value;
-  const tipo = e.target.tipo.value;
-  const sku = e.target.sku.value;
-  const file = document.getElementById("foto").files[0];
+  const data = {
+    sucursal: e.target.sucursal.value,
+    tipo: e.target.tipo.value,
+    categoria: e.target.categoria.value,
+    producto: e.target.producto.value,
+    sku: e.target.sku.value,
+    comentario: e.target.comentario.value
+  };
 
-  let base64 = "";
-  let nombre = "";
+  const file = document.getElementById("foto").files[0];
 
   if (file) {
     const reader = new FileReader();
 
     reader.onload = async function () {
-      base64 = reader.result.split(',')[1];
-      nombre = file.name;
-
-      await enviarDatos(sucursal, tipo, sku, base64, nombre);
+      data.imagen = reader.result.split(',')[1];
+      data.nombre = file.name;
+      await enviar(data);
     };
 
     reader.readAsDataURL(file);
   } else {
-    await enviarDatos(sucursal, tipo, sku, "", "");
+    data.imagen = "";
+    data.nombre = "";
+    await enviar(data);
   }
 });
 
-async function enviarDatos(sucursal, tipo, sku, imagen, nombre) {
-
+async function enviar(data) {
   await fetch(SCRIPT_URL, {
     method: "POST",
-    body: JSON.stringify({
-      sucursal: sucursal,
-      tipo: tipo,
-      sku: sku,
-      imagen: imagen,
-      nombre: nombre
-    })
+    body: JSON.stringify(data)
   });
 
   alert("Registro enviado");
