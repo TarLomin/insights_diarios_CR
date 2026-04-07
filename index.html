@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Captura de demanda</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Captura de demanda</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
 <body>
@@ -59,90 +59,92 @@
 </form>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4ZfGZ7LzBzEtFTHzDE5S4ieyQMbVg-b2HINiMJbMXAC6HZdVk1-FIhxRA7QJ46a9w/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKOYyKi_qbCEUQmez9Oo2d2IdSb7bAGcrDHX563rlz_mkLjmSCyNBH7gpSb1bbkMnv/exec";
 
+// ELEMENTOS
+const form = document.getElementById("form");
 const tipoSelect = document.getElementById("tipo");
 const skuInput = document.getElementById("sku");
 const productoInput = document.getElementById("producto");
+const fileInput = document.getElementById("foto");
 
-// ===== LÓGICA DE NEGOCIO =====
-tipoSelect.addEventListener("change", function() {
-  const tipo = this.value;
+// LÓGICA SKU / PRODUCTO
+tipoSelect.addEventListener("change", () => {
+  const tipo = tipoSelect.value;
 
   if (tipo === "no_se_vende") {
-    skuInput.required = true;
     skuInput.style.display = "block";
+    skuInput.required = true;
 
-    productoInput.required = false;
     productoInput.style.display = "none";
+    productoInput.required = false;
     productoInput.value = "";
   } else {
-    skuInput.required = false;
     skuInput.style.display = "none";
+    skuInput.required = false;
     skuInput.value = "";
 
-    productoInput.required = true;
     productoInput.style.display = "block";
+    productoInput.required = true;
   }
 });
 
-window.addEventListener("load", () => {
-  tipoSelect.dispatchEvent(new Event("change"));
-});
+tipoSelect.dispatchEvent(new Event("change"));
 
-// ===== PREVIEW =====
-document.getElementById("foto").addEventListener("change", function(e){
-  const file = e.target.files[0];
-  if (file) {
-    const preview = document.getElementById("preview");
-    preview.src = URL.createObjectURL(file);
-    preview.style.display = "block";
-  }
-});
-
-// ===== SUBMIT =====
-document.getElementById("form").addEventListener("submit", async function(e){
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const data = {
-    sucursal: e.target.sucursal.value,
-    tipo: e.target.tipo.value,
-    categoria: e.target.categoria.value,
-    producto: e.target.producto.value,
-    sku: e.target.sku.value,
-    comentario: e.target.comentario.value
-  };
+  try {
+    const formData = new FormData(form);
 
-  const file = document.getElementById("foto").files[0];
+    let imagenBase64 = "";
+    const file = fileInput.files[0];
 
-  if (file) {
-    const reader = new FileReader();
+    if (file) {
+      const reader = new FileReader();
 
-    reader.onload = async function () {
-      data.imagen = reader.result.split(',')[1];
-      data.nombre = file.name;
-      await enviar(data);
+      imagenBase64 = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const data = {
+      sucursal: formData.get("sucursal"),
+      tipo: formData.get("tipo"),
+      categoria: formData.get("categoria"),
+      producto: formData.get("producto"),
+      sku: formData.get("sku"),
+      comentario: formData.get("comentario"),
+      imagen: imagenBase64
     };
 
-    reader.readAsDataURL(file);
-  } else {
-    data.imagen = "";
-    data.nombre = "";
-    await enviar(data);
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+
+    const text = await res.text();
+
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      result = { status: "ok" };
+    }
+
+    if (result.status === "ok") {
+      alert("Registro enviado");
+      form.reset();
+    } else {
+      alert("Error: " + result.message);
+    }
+
+  } catch (err) {
+    alert("Error en envío");
+    console.error(err);
   }
 });
-
-async function enviar(data) {
-  await fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
-
-  alert("Registro enviado");
-
-  document.getElementById("form").reset();
-  document.getElementById("preview").style.display = "none";
-}
 </script>
 
 </body>
