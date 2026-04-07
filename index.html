@@ -15,14 +15,14 @@
 <form id="form">
 
   <select name="sucursal" required>
-    <option value="">Sucursal</option>
+    <option value="" disabled selected>Selecciona sucursal</option>
     <option value="Huerta">Huerta</option>
     <option value="Americas">Americas</option>
     <option value="Leon">León</option>
   </select>
 
   <select name="tipo" id="tipo" required>
-    <option value="">Tipo</option>
+    <option value="" disabled selected>Selecciona tipo</option>
     <option value="no_tenemos">No tenemos</option>
     <option value="no_se_vende">No se vende</option>
   </select>
@@ -76,6 +76,12 @@ document.getElementById("form").addEventListener("submit", async (e) => {
   const formData = new FormData(e.target)
   const data = Object.fromEntries(formData.entries())
 
+  // Validaciones
+  if (!data.tipo) {
+    alert("Debes seleccionar un tipo")
+    return
+  }
+
   if (!data.producto || data.producto.trim() === "") {
     alert("La descripción es obligatoria")
     return
@@ -85,6 +91,11 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     alert("El SKU es obligatorio para productos que no se venden")
     return
   }
+
+  // Normalización
+  data.producto = data.producto.trim().toUpperCase()
+  data.categoria = data.categoria?.toUpperCase() || ""
+  data.sku = data.sku?.trim() || ""
 
   try {
     btn.disabled = true
